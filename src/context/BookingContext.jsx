@@ -63,6 +63,17 @@ export const BookingProvider = ({ children }) => {
     }
   });
 
+  // Day 4D: Store selected seats (as array of objects) and persist in localStorage
+  const [selectedSeats, setSelectedSeats] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cineverse_selected_seats');
+      return stored ? JSON.parse(stored) : [];
+    } catch (e) {
+      console.error('[BookingContext] Error reading selected seats from localStorage:', e);
+      return [];
+    }
+  });
+
   useEffect(() => {
     // Load historical bookings
     const storedHistory = localStorage.getItem('cineverse_booking_history');
@@ -107,20 +118,33 @@ export const BookingProvider = ({ children }) => {
     }
   };
 
-  const toggleSeat = (seatId, price = 250) => {
-    setBooking(prev => {
-      const seats = [...prev.selectedSeats];
-      const index = seats.indexOf(seatId);
-      if (index > -1) {
-        seats.splice(index, 1);
+  const toggleSeat = (seatObj) => {
+    setSelectedSeats(prev => {
+      const exists = prev.some(s => s.id === seatObj.id);
+      let updated;
+      if (exists) {
+        updated = prev.filter(s => s.id !== seatObj.id);
       } else {
-        seats.push(seatId);
+        // Enforce maximum 10 seats limit
+        if (prev.length >= 10) {
+          return prev;
+        }
+        updated = [...prev, seatObj];
       }
-      return {
-        ...prev,
-        selectedSeats: seats,
-        totalAmount: seats.length * price
-      };
+      
+      try {
+        localStorage.setItem('cineverse_selected_seats', JSON.stringify(updated));
+      } catch (e) {
+        console.error('[BookingContext] Error writing selected seats to localStorage:', e);
+      }
+      
+      // Update original booking state for compatibility (as array of IDs)
+      setBooking(prevBooking => ({
+        ...prevBooking,
+        selectedSeats: updated.map(s => s.id)
+      }));
+      
+      return updated;
     });
   };
 
@@ -181,7 +205,8 @@ export const BookingProvider = ({ children }) => {
         selectedDate,
         selectedShowtime,
         selectDate,
-        selectShowtime
+        selectShowtime,
+        selectedSeats
       }}
     >
       {children}

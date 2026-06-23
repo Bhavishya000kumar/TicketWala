@@ -6,6 +6,7 @@ import { Star, Clock, Calendar, Film, Play, X, AlertTriangle, ArrowLeft, User } 
 import { useBooking } from '../hooks/useBooking';
 import { THEATRES } from '../data/theatres';
 import { SHOWTIMES } from '../data/showtimes';
+import { SEATS_DATA } from '../data/seats';
 
 const CastMember = ({ actor }) => {
   const [imgError, setImgError] = useState(false);
@@ -48,7 +49,9 @@ const MovieDetails = () => {
     selectedDate,
     selectedShowtime,
     selectDate,
-    selectShowtime
+    selectShowtime,
+    selectedSeats,
+    toggleSeat
   } = useBooking();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -194,6 +197,15 @@ const MovieDetails = () => {
   };
 
   const next7Days = generateNext7Days();
+
+  // Group seats by row for the seat map
+  const seatsByRow = SEATS_DATA ? SEATS_DATA.reduce((acc, seat) => {
+    if (!acc[seat.row]) {
+      acc[seat.row] = [];
+    }
+    acc[seat.row].push(seat);
+    return acc;
+  }, {}) : {};
 
   return (
     <div className="bg-zinc-950 min-h-screen text-zinc-100 font-sans pb-16">
@@ -487,6 +499,127 @@ const MovieDetails = () => {
                 </div>
               );
             })}
+          </div>
+        )}
+      </div>
+
+      {/* 7. Select Seats Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-zinc-900 text-left">
+        <h3 className="text-xl font-bold text-white font-display border-l-4 border-brand-red pl-3 tracking-wide uppercase mb-8">
+          Select Seats
+        </h3>
+        
+        {!SEATS_DATA || SEATS_DATA.length === 0 ? (
+          <div className="bg-zinc-900/50 border border-zinc-900 p-8 rounded-xl text-center">
+            <p className="text-sm text-zinc-400 italic">No seats available</p>
+          </div>
+        ) : (
+          <div className="bg-zinc-900/20 border border-zinc-900/50 rounded-2xl p-6 sm:p-10 shadow-xl backdrop-blur-sm">
+            {/* Screen Indicator */}
+            <div className="w-full flex flex-col items-center mb-12">
+              <div className="w-4/5 h-1.5 bg-gradient-to-r from-zinc-800 via-brand-red to-zinc-800 rounded-full shadow-[0_4px_20px_rgba(229,9,20,0.4)]" />
+              <span className="text-[10px] uppercase tracking-widest text-zinc-500 mt-3 font-extrabold">
+                Screen This Way
+              </span>
+            </div>
+
+            {/* Seat Grid */}
+            <div className="flex flex-col gap-3.5 items-center overflow-x-auto pb-6">
+              {Object.entries(seatsByRow).map(([rowLabel, rowSeats]) => (
+                <div key={rowLabel} className="flex items-center gap-3 min-w-max">
+                  {/* Left Row Label */}
+                  <span className="w-6 text-zinc-650 font-black text-xs text-center">{rowLabel}</span>
+                  
+                  {/* Seats */}
+                  <div className="flex gap-2">
+                    {rowSeats.map((seat) => {
+                      const isSelected = selectedSeats?.some(s => s.id === seat.id);
+                      const isBooked = seat.status === 'booked';
+                      
+                      let seatClass = "";
+                      if (isBooked) {
+                        seatClass = "bg-zinc-950/80 border border-zinc-900 text-zinc-750 cursor-not-allowed opacity-30";
+                      } else if (isSelected) {
+                        seatClass = "bg-brand-red border border-brand-red text-white shadow-md shadow-brand-red/35 hover:bg-brand-red/90 scale-105";
+                      } else {
+                        seatClass = "bg-zinc-800/60 border border-zinc-700 text-zinc-300 hover:border-zinc-500 hover:bg-zinc-700/60 hover:text-white";
+                      }
+
+                      return (
+                        <button
+                          key={seat.id}
+                          disabled={isBooked}
+                          onClick={() => toggleSeat(seat)}
+                          className={`w-9 h-9 rounded-lg text-xs font-bold transition-all duration-200 flex items-center justify-center cursor-pointer ${
+                            seat.number === 5 ? 'mr-6' : ''
+                          } ${seatClass}`}
+                          title={`${seat.id} (${seat.type}) - ${seat.status}`}
+                        >
+                          {seat.number}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Right Row Label */}
+                  <span className="w-6 text-zinc-650 font-black text-xs text-center">{rowLabel}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Legend */}
+            <div className="flex flex-wrap justify-center items-center gap-x-8 gap-y-3 mt-6 pt-6 border-t border-zinc-900/60 text-xs font-bold text-zinc-400">
+              <div className="flex items-center gap-2.5">
+                <div className="w-4 h-4 bg-zinc-800/60 border border-zinc-700 rounded" />
+                <span>Available</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-4 h-4 bg-brand-red border border-brand-red rounded" />
+                <span>Selected</span>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <div className="w-4 h-4 bg-zinc-950/80 border border-zinc-900 opacity-30 rounded" />
+                <span>Booked</span>
+              </div>
+            </div>
+
+            {/* Seat Types Info */}
+            <div className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-2 text-[10px] text-zinc-500 font-extrabold uppercase tracking-wider">
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-zinc-800 border border-zinc-700"></span>Rows A-B: Recliner</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-zinc-800 border border-zinc-700"></span>Rows C-D: Premium</span>
+              <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded bg-zinc-800 border border-zinc-700"></span>Rows E-F: Regular</span>
+            </div>
+
+            {/* Selected Seats Summary Block */}
+            {selectedSeats && selectedSeats.length > 0 ? (
+              <div className="mt-8 bg-zinc-900/40 border border-zinc-850 rounded-xl p-5 flex flex-col sm:flex-row justify-between items-center gap-4 animate-in fade-in slide-in-from-bottom-3 duration-250">
+                <div className="space-y-1 text-center sm:text-left">
+                  <h4 className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                    Selected Seats
+                  </h4>
+                  <p className="text-white font-extrabold text-lg tracking-wide">
+                    {selectedSeats.map(s => s.id).join(', ')}
+                  </p>
+                </div>
+                <div className="flex items-center gap-5 shrink-0 text-center sm:text-right">
+                  <div>
+                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest">
+                      Total Seats
+                    </p>
+                    <p className="text-brand-red font-black text-2xl">
+                      {selectedSeats.length}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+
+            {/* Limit Warning */}
+            {selectedSeats && selectedSeats.length === 10 && (
+              <p className="text-brand-red text-center text-xs font-bold mt-4 animate-pulse">
+                Maximum selection limit of 10 seats reached.
+              </p>
+            )}
           </div>
         )}
       </div>
