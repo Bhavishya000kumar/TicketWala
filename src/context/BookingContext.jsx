@@ -14,6 +14,32 @@ const initialBookingState = {
 export const BookingProvider = ({ children }) => {
   const [booking, setBooking] = useState(initialBookingState);
   const [bookingHistory, setBookingHistory] = useState([]);
+  
+  // Day 4B: Store selected theatre and persist in localStorage
+  const [selectedTheatre, setSelectedTheatre] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cineverse_selected_theatre');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.error('[BookingContext] Error reading selected theatre from localStorage:', e);
+      return null;
+    }
+  });
+
+  const selectTheatre = (theatre) => {
+    setSelectedTheatre(theatre);
+    try {
+      if (theatre) {
+        localStorage.setItem('cineverse_selected_theatre', JSON.stringify(theatre));
+      } else {
+        localStorage.removeItem('cineverse_selected_theatre');
+      }
+    } catch (e) {
+      console.error('[BookingContext] Error writing selected theatre to localStorage:', e);
+    }
+  };
+
+  const selectedTheatreId = selectedTheatre ? selectedTheatre.id : null;
 
   useEffect(() => {
     // Load historical bookings
@@ -106,7 +132,10 @@ export const BookingProvider = ({ children }) => {
         selectShowtime,
         toggleSeat,
         clearBooking,
-        confirmBooking
+        confirmBooking,
+        selectedTheatre,
+        selectedTheatreId,
+        selectTheatre
       }}
     >
       {children}

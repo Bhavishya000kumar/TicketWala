@@ -3,6 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { movieService } from '../services/movie.service';
 import Button from '../components/ui/Button';
 import { Star, Clock, Calendar, Film, Play, X, AlertTriangle, ArrowLeft, User } from 'lucide-react';
+import { useBooking } from '../hooks/useBooking';
+import { THEATRES } from '../data/theatres';
 
 const CastMember = ({ actor }) => {
   const [imgError, setImgError] = useState(false);
@@ -39,6 +41,7 @@ const CastMember = ({ actor }) => {
 const MovieDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { selectedTheatre, selectTheatre } = useBooking();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -311,6 +314,74 @@ const MovieDetails = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 4. Available Theatres Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-zinc-900 text-left">
+        <h3 className="text-xl font-bold text-white font-display border-l-4 border-brand-red pl-3 tracking-wide uppercase mb-8">
+          Available Theatres
+        </h3>
+        
+        {!THEATRES || THEATRES.length === 0 ? (
+          <div className="bg-zinc-900/50 border border-zinc-900 p-8 rounded-xl text-center">
+            <p className="text-sm text-zinc-400 italic">No theatres available</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {THEATRES.map((theatre) => {
+              const isSelected = selectedTheatre?.id === theatre.id;
+              return (
+                <div
+                  key={theatre.id}
+                  onClick={() => selectTheatre(isSelected ? null : theatre)}
+                  className={`relative group bg-zinc-900/40 border p-5.5 rounded-xl cursor-pointer transition-all duration-300 flex flex-col justify-between min-h-[170px] ${
+                    isSelected 
+                      ? 'border-brand-red ring-2 ring-brand-red/35 shadow-lg shadow-brand-red/10' 
+                      : 'border-zinc-850 hover:border-zinc-700 hover:bg-zinc-900/60'
+                  }`}
+                >
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-start gap-2">
+                      <h4 className="font-bold text-sm text-white group-hover:text-brand-red transition-colors line-clamp-1">
+                        {theatre.name}
+                      </h4>
+                      {isSelected && (
+                        <span className="shrink-0 bg-brand-red text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+                          Selected
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-normal">
+                      {theatre.location}
+                    </p>
+                    {/* Facilities tags */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {theatre.facilities?.slice(0, 3).map((facility, fIdx) => (
+                        <span key={fIdx} className="text-[9px] bg-zinc-800/80 text-zinc-400 px-2 py-0.5 rounded font-medium">
+                          {facility}
+                        </span>
+                      ))}
+                      {theatre.facilities?.length > 3 && (
+                        <span className="text-[9px] text-zinc-500 font-medium self-center pl-0.5">
+                          +{theatre.facilities.length - 3} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pt-4 border-t border-zinc-800/40 mt-4">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
+                      Experience
+                    </span>
+                    <span className="bg-zinc-800/90 text-zinc-300 text-[10px] font-extrabold px-2 py-0.5 rounded">
+                      {theatre.type}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Trailer Modal Player Overlay */}
