@@ -171,14 +171,14 @@ const QuickBooking = () => {
               {/* Movie info */}
               <div className="flex gap-4 pb-4 border-b border-zinc-150">
                 <img
-                  src={bookingSuccessData.movie.posterUrl}
+                  src={bookingSuccessData.movie.poster}
                   alt={bookingSuccessData.movie.title}
                   className="w-16 h-24 rounded-lg object-cover border border-zinc-200 shadow-sm"
                 />
                 <div>
                   <h3 className="font-bold text-lg text-zinc-950 leading-snug">{bookingSuccessData.movie.title}</h3>
                   <p className="text-xs text-zinc-500 mt-1">{bookingSuccessData.movie.genre}</p>
-                  <p className="text-xs font-semibold text-zinc-700 mt-1.5">{bookingSuccessData.movie.runtime} • {bookingSuccessData.movie.censorRating}</p>
+                  <p className="text-xs font-semibold text-zinc-700 mt-1.5">{bookingSuccessData.movie.duration} • {bookingSuccessData.movie.censorRating || 'UA'}</p>
                 </div>
               </div>
 

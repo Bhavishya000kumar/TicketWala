@@ -5,8 +5,14 @@ import { BookingProvider } from './context/BookingContext';
 import Navbar from './components/Navbar';
 import HeroCarousel from './components/HeroCarousel';
 import QuickBooking from './components/QuickBooking';
+import NowShowing from './components/NowShowing';
+import ComingSoon from './components/ComingSoon';
+import Experiences from './components/Experiences';
+import TrailersShowcase from './components/TrailersShowcase';
+import Offers from './components/Offers';
+import Footer from './components/Footer';
 import Button from './components/ui/Button';
-import { Film, Award, ShieldCheck, HeartHandshake, PhoneCall, ChevronRight } from 'lucide-react';
+import { Film, Award, ShieldCheck, HeartHandshake, PhoneCall } from 'lucide-react';
 
 // Main Homepage View
 const Home = () => {
@@ -14,45 +20,50 @@ const Home = () => {
     <>
       <HeroCarousel />
       <QuickBooking />
+      <NowShowing />
+      <ComingSoon />
+      <Experiences />
+      <TrailersShowcase />
+      <Offers />
       
-      {/* Premium Trust Bar & Cinema Features (Inspired by premium PVR/INOX features) */}
-      <section className="bg-white border-y border-zinc-150 py-10 mb-16">
+      {/* Premium Trust Bar (Pre-Footer features bar) */}
+      <section className="bg-white border-t border-zinc-150 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 text-left">
             <div className="flex items-start gap-4">
               <div className="bg-zinc-50 p-3 rounded-xl border border-zinc-100 text-brand-red">
-                <ShieldCheck className="w-6 h-6" />
+                <ShieldCheck className="w-6 h-6 shrink-0" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-zinc-950">100% Secure Checkout</h3>
-                <p className="text-xs text-zinc-500 mt-1">Prepped for Razorpay and SSL-grade transaction protocols</p>
+                <h3 className="font-bold text-sm text-zinc-950">100% Secure Checkout</h3>
+                <p className="text-xs text-zinc-500 mt-1">Prepped for Razorpay and SSL-grade transaction protocols.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <div className="bg-zinc-50 p-3 rounded-xl border border-zinc-100 text-brand-red">
-                <Award className="w-6 h-6" />
+                <Award className="w-6 h-6 shrink-0" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-zinc-950">Premium Cinema Tech</h3>
-                <p className="text-xs text-zinc-500 mt-1">IMAX, 4DX, Insignia and Director's Cut screening options</p>
+                <h3 className="font-bold text-sm text-zinc-950">Premium Cinema Tech</h3>
+                <p className="text-xs text-zinc-500 mt-1">IMAX, 4DX, Luxe and Dolby Atmos screening options.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <div className="bg-zinc-50 p-3 rounded-xl border border-zinc-100 text-brand-red">
-                <HeartHandshake className="w-6 h-6" />
+                <HeartHandshake className="w-6 h-6 shrink-0" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-zinc-950">Seamless Rescheduling</h3>
-                <p className="text-xs text-zinc-500 mt-1">Easy cancellations and ticket swaps in your dashboard</p>
+                <h3 className="font-bold text-sm text-zinc-950">Seamless Rescheduling</h3>
+                <p className="text-xs text-zinc-500 mt-1">Easy cancellations and ticket swaps in your dashboard.</p>
               </div>
             </div>
             <div className="flex items-start gap-4">
               <div className="bg-zinc-50 p-3 rounded-xl border border-zinc-100 text-brand-red">
-                <PhoneCall className="w-6 h-6" />
+                <PhoneCall className="w-6 h-6 shrink-0" />
               </div>
               <div>
-                <h3 className="font-bold text-base text-zinc-950">24/7 CineVerse Support</h3>
-                <p className="text-xs text-zinc-500 mt-1">Instant support for corporate bookings and refunds</p>
+                <h3 className="font-bold text-sm text-zinc-950">24/7 CineVerse Support</h3>
+                <p className="text-xs text-zinc-500 mt-1">Instant support for corporate bookings and refunds.</p>
               </div>
             </div>
           </div>
@@ -67,7 +78,7 @@ const RoutePlaceholder = ({ title, description, nextSteps = [] }) => {
   return (
     <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-6">
       <div className="inline-flex bg-zinc-100 text-zinc-600 p-4.5 rounded-2xl border border-zinc-200">
-        <Film className="w-10 h-10" />
+        <Film className="w-10 h-10 animate-pulse" />
       </div>
       <h1 className="text-3xl font-extrabold tracking-tight text-zinc-950 font-display">{title}</h1>
       <p className="text-base text-zinc-600 max-w-lg mx-auto">{description}</p>
@@ -104,37 +115,7 @@ const Layout = ({ children }) => {
         <Navbar />
         <main>{children}</main>
       </div>
-
-      {/* Modern, Clean Minimalist Footer */}
-      <footer className="bg-zinc-950 text-zinc-400 border-t border-zinc-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 pb-8 border-b border-zinc-800">
-            <div>
-              <div className="flex items-center gap-2.5 mb-2">
-                <div className="bg-brand-red p-2 rounded-lg flex items-center justify-center">
-                  <Film className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold tracking-tight text-white font-display">
-                  Cine<span className="text-brand-red">Verse</span>
-                </span>
-              </div>
-              <p className="text-xs text-zinc-500">Premium Cinema Booking Platform</p>
-            </div>
-            
-            <div className="flex flex-wrap gap-x-8 gap-y-3 text-xs font-semibold uppercase tracking-wider">
-              <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
-              <a href="#" className="hover:text-white transition-colors">Terms & Conditions</a>
-              <a href="#" className="hover:text-white transition-colors">Support Helpline</a>
-            </div>
-          </div>
-          
-          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-zinc-600">
-            <span>© {new Date().getFullYear()} CineVerse Entertainment Ltd. All rights reserved.</span>
-            <span>Made with precision for high-volume transactions.</span>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 };
@@ -146,7 +127,7 @@ function App() {
         <Router>
           <Layout>
             <Routes>
-              {/* Day 1 Homepage Router */}
+              {/* Homepage */}
               <Route path="/" element={<Home />} />
               
               {/* Future Integration Mock Routes */}

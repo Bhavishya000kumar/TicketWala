@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, EffectFade, Navigation, Pagination } from 'swiper/modules';
-import { MOVIES_DATA } from '../services/api';
+import { NOW_SHOWING_MOVIES } from '../data/movies';
 import { useBooking } from '../context/BookingContext';
 import Button from './ui/Button';
 import { Play, Calendar, Clock, Star, X } from 'lucide-react';
@@ -27,7 +27,7 @@ const HeroCarousel = () => {
   };
 
   return (
-    <div className="relative w-full bg-zinc-950 text-white overflow-hidden">
+    <div className="relative w-full bg-zinc-950 text-white overflow-hidden shadow-lg">
       <Swiper
         modules={[Autoplay, EffectFade, Navigation, Pagination]}
         effect={'fade'}
@@ -43,30 +43,29 @@ const HeroCarousel = () => {
           clickable: true,
           dynamicBullets: false,
         }}
-        className="w-full min-h-[500px] md:min-h-[600px] lg:h-[650px]"
+        className="w-full min-h-[500px] md:min-h-[600px] lg:h-[620px]"
       >
-        {MOVIES_DATA.map((movie) => (
+        {NOW_SHOWING_MOVIES.map((movie) => (
           <SwiperSlide key={movie.id} className="relative w-full h-full flex items-center">
             {/* Backdrop Image with gradient overlay */}
             <div className="absolute inset-0 z-0">
               <img
-                src={movie.backdropUrl}
+                src={movie.banner}
                 alt={movie.title}
-                className="w-full h-full object-cover object-center opacity-40 scale-105 transition-transform duration-[5000ms] ease-out"
+                className="w-full h-full object-cover object-center opacity-45 scale-105 transition-transform duration-[5000ms] ease-out"
               />
-              {/* Radial gradient to darken edges, linear gradient to blend bottom */}
-              <div className="absolute inset-0 bg-radial-gradient from-transparent via-zinc-950/70 to-zinc-950 z-10" />
-              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-zinc-950/50 z-10" />
+              <div className="absolute inset-0 bg-gradient-to-r from-zinc-950 via-zinc-950/70 to-transparent z-10 hidden md:block" />
+              <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/60 to-zinc-950/40 z-10 md:hidden" />
             </div>
 
-            {/* Split Content Layout */}
+            {/* Content Layout */}
             <div className="relative z-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 w-full h-full flex flex-col md:flex-row items-center justify-between gap-12">
               {/* Left Side: Movie Details */}
               <div className="flex-1 text-left space-y-6 max-w-xl md:max-w-2xl">
                 {/* Badge Row */}
                 <div className="flex flex-wrap items-center gap-3">
                   <span className="bg-brand-red text-white text-xs font-bold px-2.5 py-1 rounded">
-                    {movie.censorRating}
+                    UA
                   </span>
                   <span className="bg-zinc-800/80 text-zinc-300 text-xs font-semibold px-2.5 py-1 rounded">
                     {movie.language}
@@ -86,19 +85,19 @@ const HeroCarousel = () => {
                 <div className="flex flex-wrap items-center gap-6 text-sm text-zinc-300 font-medium">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-brand-red" />
-                    <span>{movie.runtime}</span>
+                    <span>{movie.duration}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4 text-brand-red" />
                     <span>{movie.releaseDate}</span>
                   </div>
-                  <span className="text-zinc-400">|</span>
+                  <span className="text-zinc-500 hidden sm:inline">|</span>
                   <span className="text-zinc-300">{movie.genre}</span>
                 </div>
 
                 {/* Synopsis */}
                 <p className="text-base text-zinc-300 font-normal leading-relaxed max-w-xl drop-shadow">
-                  {movie.synopsis}
+                  {movie.description}
                 </p>
 
                 {/* Actions */}
@@ -107,7 +106,7 @@ const HeroCarousel = () => {
                     variant="primary"
                     size="lg"
                     onClick={() => handleBookNow(movie)}
-                    className="font-bold tracking-wide cursor-pointer"
+                    className="font-bold tracking-wide cursor-pointer shadow-sm hover:shadow-md"
                   >
                     BOOK NOW
                   </Button>
@@ -125,15 +124,15 @@ const HeroCarousel = () => {
               </div>
 
               {/* Right Side: Movie Poster */}
-              <div className="w-48 sm:w-60 md:w-72 lg:w-80 shrink-0 self-center md:self-auto hidden sm:block">
-                <div className="relative group overflow-hidden rounded-2xl shadow-2xl border border-white/10 transition-transform duration-300 hover:scale-105">
+              <div className="w-48 sm:w-60 md:w-72 lg:w-76 shrink-0 self-center md:self-auto hidden sm:block">
+                <div className="relative group overflow-hidden rounded-xl shadow-2xl border border-white/10 transition-transform duration-300 hover:scale-103">
                   <img
-                    src={movie.posterUrl}
+                    src={movie.poster}
                     alt={`${movie.title} poster`}
                     className="w-full aspect-[2/3] object-cover"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
-                    <span className="text-sm font-semibold tracking-wider text-white">IN CINEMAS NOW</span>
+                    <span className="text-xs font-semibold tracking-wider text-white uppercase">IN CINEMAS NOW</span>
                   </div>
                 </div>
               </div>
