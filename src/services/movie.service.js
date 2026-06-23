@@ -30,7 +30,9 @@ export const movieService = {
     } catch (err) {
       console.warn(`[MovieService] Node API movie detail for "${id}" unavailable. Searching local collections...`);
       const all = [...NOW_SHOWING_MOVIES, ...COMING_SOON_MOVIES];
-      const found = all.find(m => m.id === id);
+      // Match exact ID first (e.g. 'm1'), then fall back to numeric ID mapping (e.g. '1' -> 'm1')
+      const found = all.find(m => m.id === id) || 
+                    all.find(m => m.id.replace(/\D/g, '') === id.toString().replace(/\D/g, ''));
       if (!found) throw new Error('Movie not found');
       return found;
     }

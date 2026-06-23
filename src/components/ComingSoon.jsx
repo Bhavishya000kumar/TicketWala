@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { COMING_SOON_MOVIES } from '../data/movies';
 import Button from './ui/Button';
 import { Bell, Calendar, CheckCircle2, X } from 'lucide-react';
 
 const ComingSoon = () => {
+  const navigate = useNavigate();
   const [toastMessage, setToastMessage] = useState(null);
 
   // Auto-close toast notification after 4 seconds
@@ -18,6 +20,10 @@ const ComingSoon = () => {
 
   const handleNotifyMe = (movieTitle) => {
     setToastMessage(`Alert activated! We will notify you when tickets open for ${movieTitle}`);
+  };
+
+  const handleCardClick = (movieId) => {
+    navigate(`/movie/${movieId}`);
   };
 
   return (
@@ -36,7 +42,8 @@ const ComingSoon = () => {
           {COMING_SOON_MOVIES.map((movie) => (
             <div
               key={movie.id}
-              className="group flex bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden hover:shadow-md hover:border-zinc-300 transition-all duration-300"
+              onClick={() => handleCardClick(movie.id)}
+              className="group flex bg-white rounded-xl border border-zinc-200 shadow-sm overflow-hidden hover:shadow-md hover:border-zinc-300 transition-all duration-300 cursor-pointer"
             >
               {/* Left Side: Poster */}
               <div className="w-1/2 aspect-[2/3] overflow-hidden bg-zinc-100 shrink-0">
@@ -76,7 +83,10 @@ const ComingSoon = () => {
                     size="sm"
                     icon={Bell}
                     iconPosition="left"
-                    onClick={() => handleNotifyMe(movie.title)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleNotifyMe(movie.title);
+                    }}
                     className="w-full font-bold py-1.5 text-xs cursor-pointer hover:bg-zinc-900 hover:text-white hover:border-transparent transition-all duration-200"
                   >
                     Notify Me

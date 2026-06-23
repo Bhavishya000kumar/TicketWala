@@ -1,18 +1,14 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NOW_SHOWING_MOVIES } from '../data/movies';
-import { useBooking } from '../context/BookingContext';
 import Button from './ui/Button';
 import { Star, Clock, Heart } from 'lucide-react';
 
 const NowShowing = () => {
-  const { selectMovie } = useBooking();
+  const navigate = useNavigate();
 
-  const handleBookNow = (movie) => {
-    selectMovie(movie);
-    const bookingSection = document.getElementById('quick-booking-section');
-    if (bookingSection) {
-      bookingSection.scrollIntoView({ behavior: 'smooth' });
-    }
+  const handleCardClick = (movieId) => {
+    navigate(`/movie/${movieId}`);
   };
 
   return (
@@ -35,7 +31,8 @@ const NowShowing = () => {
         {NOW_SHOWING_MOVIES.map((movie) => (
           <div
             key={movie.id}
-            className="group flex flex-col bg-white rounded-xl border border-zinc-200/60 shadow-sm hover:shadow-md hover:border-zinc-300 transition-all duration-300 overflow-hidden"
+            onClick={() => handleCardClick(movie.id)}
+            className="group flex flex-col bg-white rounded-xl border border-zinc-200/60 shadow-sm hover:shadow-md hover:border-zinc-300 transition-all duration-300 overflow-hidden cursor-pointer"
           >
             {/* Poster container with hover effect */}
             <div className="relative aspect-[2/3] w-full overflow-hidden bg-zinc-100">
@@ -54,7 +51,7 @@ const NowShowing = () => {
 
               {/* Heart/Favorite Icon */}
               <button 
-                className="absolute top-3 right-3 p-2 bg-white/80 hover:bg-white text-zinc-600 hover:text-brand-red rounded-full backdrop-blur-sm transition-colors shadow-sm cursor-pointer"
+                className="absolute top-3 right-3 p-2 bg-white/80 hover:bg-white text-zinc-600 hover:text-brand-red rounded-full backdrop-blur-sm transition-colors shadow-sm cursor-pointer z-10"
                 onClick={(e) => {
                   e.stopPropagation();
                   alert(`Added ${movie.title} to your watchlist!`);
@@ -81,14 +78,17 @@ const NowShowing = () => {
                 </div>
               </div>
 
-              {/* Booking Action */}
+              {/* View Details Action */}
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => handleBookNow(movie)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleCardClick(movie.id);
+                }}
                 className="w-full font-bold group-hover:bg-brand-red group-hover:text-white group-hover:border-transparent transition-all duration-300 py-2 cursor-pointer"
               >
-                Book Tickets
+                View Details
               </Button>
             </div>
           </div>

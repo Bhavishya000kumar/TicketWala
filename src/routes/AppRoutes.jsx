@@ -6,6 +6,7 @@ import ProtectedRoute from './ProtectedRoute';
 
 // Pages
 import Home from '../pages/Home';
+import Movies from '../pages/Movies';
 import MovieDetails from '../pages/MovieDetails';
 import CinemaList from '../pages/CinemaList';
 import SeatSelection from '../pages/SeatSelection';
@@ -25,8 +26,9 @@ const AppRoutes = () => {
         <Route index element={<Home />} />
         
         {/* Movies listings & descriptions */}
-        <Route path="movies" element={<CinemaList />} />
+        <Route path="movies" element={<Movies />} />
         <Route path="movie/:id" element={<MovieDetails />} />
+        <Route path="cinemas" element={<CinemaList />} />
         
         {/* Seating coordinates selection */}
         <Route path="seats" element={<SeatSelection />} />

@@ -1,114 +1,246 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { movieService } from '../services/movie.service';
-import { showtimeService } from '../services/showtime.service';
-import { reviewService } from '../services/review.service';
-import { useBooking } from '../hooks/useBooking';
 import Button from '../components/ui/Button';
-import { Star, Clock, Calendar, ShieldCheck, Heart, User, Play, ChevronRight, MessageSquareCode } from 'lucide-react';
+import { Star, Clock, Calendar, Film, Play, X, AlertTriangle, ArrowLeft, User } from 'lucide-react';
+
+const CastMember = ({ actor }) => {
+  const [imgError, setImgError] = useState(false);
+  
+  const getInitials = (name) => {
+    if (!name) return '?';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  return (
+    <div className="bg-zinc-900 border border-zinc-800/80 p-4 rounded-xl flex items-center gap-3 shadow-md transition-all hover:border-zinc-700">
+      {!imgError && actor.avatar ? (
+        <img
+          src={actor.avatar}
+          alt={actor.name}
+          onError={() => setImgError(true)}
+          className="w-12 h-12 rounded-full object-cover border border-zinc-800 shrink-0"
+        />
+      ) : (
+        <div className="w-12 h-12 rounded-full bg-zinc-850 border border-zinc-700 flex items-center justify-center text-zinc-300 shrink-0 font-bold text-xs tracking-wider">
+          {getInitials(actor.name)}
+        </div>
+      )}
+      <div className="truncate">
+        <p className="text-xs font-bold text-white truncate">{actor.name}</p>
+        <p className="text-[10px] text-zinc-400 truncate mt-0.5">{actor.role}</p>
+      </div>
+    </div>
+  );
+};
 
 const MovieDetails = () => {
   const { id } = useParams();
-  const { selectMovie, selectShowtime } = useBooking();
+  const navigate = useNavigate();
   const [movie, setMovie] = useState(null);
-  const [showtimes, setShowtimes] = useState([]);
-  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTrailerUrl, setActiveTrailerUrl] = useState(null);
+  const [isTrailerOpen, setIsTrailerOpen] = useState(false);
 
   useEffect(() => {
-    const fetchMovieData = async () => {
+    const fetchMovie = async () => {
       try {
         setLoading(true);
+        setError(null);
         const data = await movieService.getMovieById(id);
         setMovie(data);
-        
-        const slots = await showtimeService.getShowtimesByMovie(id);
-        setShowtimes(slots);
-        
-        const feed = await reviewService.getReviewsByMovie(id);
-        setReviews(feed);
       } catch (err) {
-        setError(err.message);
+        console.error(err);
+        setError(err.message || 'Movie not found.');
       } finally {
         setLoading(false);
       }
     };
-    fetchMovieData();
+    fetchMovie();
   }, [id]);
 
-  const handleShowtimeClick = (slot) => {
-    if (movie) {
-      selectMovie(movie);
-      selectShowtime(slot);
-    }
-  };
-
+  // Loading skeleton screen to prevent layout shifts
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-24 text-center">
-        <p className="text-sm font-semibold text-zinc-400 animate-pulse">Loading movie details...</p>
+      <div className="bg-zinc-950 min-h-screen text-zinc-100 font-sans pb-16">
+        {/* Banner Skeleton (Reduced Height) */}
+        <div className="relative h-[240px] md:h-[360px] bg-zinc-900 animate-pulse overflow-hidden flex items-end">
+          <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-transparent" />
+        </div>
+
+        {/* Content Skeleton */}
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 sm:-mt-24 md:-mt-32 z-10 flex flex-col md:flex-row gap-8 items-start">
+          {/* Poster Skeleton */}
+          <div className="w-48 sm:w-56 shrink-0 aspect-[2/3] bg-zinc-800 rounded-xl border border-zinc-800 shadow-2xl animate-pulse" />
+          
+          {/* Details Skeleton */}
+          <div className="space-y-4 max-w-2xl w-full pt-4 md:pt-14">
+            <div className="h-4 bg-zinc-800 w-1/4 rounded animate-pulse" />
+            <div className="h-10 bg-zinc-800 w-3/4 rounded animate-pulse" />
+            <div className="h-5 bg-zinc-800 w-1/2 rounded animate-pulse" />
+            <div className="h-4 bg-zinc-800 w-2/3 rounded animate-pulse" />
+          </div>
+        </div>
+
+        {/* Details & Cast Skeleton */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 grid grid-cols-1 lg:grid-cols-3 gap-10">
+          <div className="lg:col-span-2 space-y-10">
+            <div className="space-y-3">
+              <div className="h-6 bg-zinc-900 w-1/3 rounded animate-pulse" />
+              <div className="space-y-2">
+                <div className="h-4 bg-zinc-900 w-full rounded animate-pulse" />
+                <div className="h-4 bg-zinc-900 w-5/6 rounded animate-pulse" />
+                <div className="h-4 bg-zinc-900 w-2/3 rounded animate-pulse" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="h-6 bg-zinc-900 w-1/4 rounded animate-pulse" />
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-16 bg-zinc-900 border border-zinc-900 rounded-xl animate-pulse" />
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // Movie Not Found screen
   if (error || !movie) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-24 text-center space-y-4">
-        <h2 className="text-xl font-bold text-zinc-800">Oops! Movie details unavailable.</h2>
-        <p className="text-sm text-zinc-500">{error || 'Movie not found.'}</p>
-        <Link to="/" className="text-xs text-brand-red font-bold hover:underline">Return to Home</Link>
+      <div className="bg-zinc-950 min-h-[90vh] text-zinc-100 flex flex-col items-center justify-center px-4 font-sans py-20 text-center">
+        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-6 animate-in zoom-in-95 duration-200">
+          <div className="mx-auto w-16 h-16 bg-brand-red/10 border border-brand-red/20 text-brand-red rounded-full flex items-center justify-center">
+            <AlertTriangle className="w-8 h-8" />
+          </div>
+          
+          <div className="space-y-2">
+            <h2 className="text-2xl font-extrabold tracking-tight font-display text-white">Movie Not Found</h2>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              We couldn't retrieve details for this movie. It may have been removed, or the URL ID might be invalid.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+            <Button
+              variant="primary"
+              onClick={() => navigate('/')}
+              className="flex items-center justify-center gap-2 py-3"
+              icon={ArrowLeft}
+            >
+              Back To Home
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate('/movies')}
+              className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white flex items-center justify-center gap-2 py-3"
+              icon={Film}
+            >
+              Browse Movies
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
-  // Mock cast members
-  const castList = [
-    { name: 'Lead Actor', role: 'Main Protagonist', avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100' },
-    { name: 'Co-Star Actress', role: 'Supporting Partner', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&q=80&w=100' },
-    { name: 'Lead Antagonist', role: 'Primary Rival', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=100' },
-    { name: 'Character Actor', role: 'Sidekick Friend', avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=100' }
-  ];
-
   return (
-    <div className="font-sans">
-      {/* 1. Backdrop banner */}
-      <div className="relative bg-zinc-950 text-white py-16 md:py-24 overflow-hidden border-b border-zinc-800">
+    <div className="bg-zinc-950 min-h-screen text-zinc-100 font-sans pb-16">
+      {/* 1. Backdrop Banner Section (Reduced Height) */}
+      <div className="relative h-[240px] sm:h-[300px] md:h-[390px] overflow-hidden border-b border-zinc-900">
         <div className="absolute inset-0 z-0">
-          <img src={movie.banner} alt={movie.title} className="w-full h-full object-cover opacity-25 object-center" />
+          <img
+            src={movie.banner || movie.poster}
+            alt={movie.title}
+            className="w-full h-full object-cover opacity-30 object-center"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/70 to-transparent" />
         </div>
         
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row gap-8 items-center text-left">
-          {/* Poster */}
-          <div className="w-48 sm:w-56 shrink-0 rounded-xl overflow-hidden shadow-2xl border border-white/10">
-            <img src={movie.poster} alt={movie.title} className="w-full aspect-[2/3] object-cover" />
+        {/* Mobile quick watch trailer option overlay */}
+        <div className="absolute inset-0 flex items-center justify-center md:hidden z-10">
+          <button
+            onClick={() => setIsTrailerOpen(true)}
+            className="p-4 bg-brand-red/90 text-white rounded-full hover:bg-brand-red shadow-lg transition-transform hover:scale-105"
+            aria-label="Play Trailer"
+          >
+            <Play className="w-8 h-8 fill-current" />
+          </button>
+        </div>
+      </div>
+
+      {/* 2. Core Movie Details Overlaid Panel */}
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 sm:-mt-24 md:-mt-32 z-10">
+        <div className="flex flex-col md:flex-row gap-8 items-start md:items-end text-left">
+          {/* Large High-Res Poster */}
+          <div className="w-40 sm:w-48 md:w-56 shrink-0 rounded-xl overflow-hidden shadow-2xl border border-zinc-800 bg-zinc-900">
+            <img
+              src={movie.poster}
+              alt={movie.title}
+              className="w-full aspect-[2/3] object-cover"
+            />
           </div>
 
-          {/* Core Info */}
-          <div className="space-y-5 max-w-2xl">
+          {/* Core metadata panel */}
+          <div className="space-y-4 flex-grow">
             <div className="flex flex-wrap items-center gap-3">
-              <span className="bg-brand-red text-white text-xs font-bold px-2 py-0.5 rounded">UA</span>
-              <div className="flex items-center gap-1.5 bg-yellow-500/15 border border-yellow-500/30 text-yellow-500 font-bold px-2 py-0.5 rounded text-xs">
-                <Star className="w-3.5 h-3.5 fill-yellow-500" />
-                <span>{movie.rating} / 10</span>
-              </div>
+              <span className="bg-brand-red text-white text-[11px] font-bold px-2 py-0.5 rounded">
+                UA
+              </span>
+              {movie.rating && (
+                <div className="flex items-center gap-1.5 bg-yellow-500/10 border border-yellow-500/30 text-yellow-500 font-bold px-2 py-0.5 rounded text-xs">
+                  <Star className="w-3.5 h-3.5 fill-yellow-500" />
+                  <span>{movie.rating} / 10</span>
+                </div>
+              )}
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight font-display">{movie.title}</h1>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight font-display text-white drop-shadow">
+              {movie.title}
+            </h1>
             
-            <p className="text-sm text-zinc-300 font-medium">{movie.genre} • {movie.duration}</p>
-            <p className="text-xs text-zinc-400">Release date: {movie.releaseDate} • languages: {movie.language}</p>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400 font-medium">
+              <span>{movie.genre}</span>
+              {movie.duration && (
+                <>
+                  <span className="text-zinc-700">•</span>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-brand-red" />
+                    <span>{movie.duration}</span>
+                  </div>
+                </>
+              )}
+              {movie.releaseDate && (
+                <>
+                  <span className="text-zinc-700">•</span>
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-brand-red" />
+                    <span>{movie.releaseDate}</span>
+                  </div>
+                </>
+              )}
+            </div>
 
-            <div className="flex items-center gap-3 pt-2">
-              <Button variant="primary" size="md" onClick={() => {
-                const scrollTarget = document.getElementById('showtimes-selector');
-                if (scrollTarget) scrollTarget.scrollIntoView({ behavior: 'smooth' });
-              }}>
-                BOOK TICKETS
-              </Button>
-              <Button variant="outline" size="md" icon={Play} className="bg-transparent text-white border-white hover:bg-white hover:text-zinc-950" onClick={() => setActiveTrailerUrl(movie.trailerUrl)}>
+            {movie.director && (
+              <p className="text-sm font-semibold text-zinc-300">
+                Director: <span className="text-white font-bold">{movie.director}</span>
+              </p>
+            )}
+
+            {/* Watch Trailer Desktop Button */}
+            <div className="pt-2 hidden md:block">
+              <Button
+                variant="outline"
+                size="md"
+                icon={Play}
+                iconPosition="left"
+                className="bg-transparent text-white border-zinc-700 hover:bg-zinc-800 hover:border-zinc-500 transition-all font-bold"
+                onClick={() => setIsTrailerOpen(true)}
+              >
                 Watch Trailer
               </Button>
             </div>
@@ -116,104 +248,91 @@ const MovieDetails = () => {
         </div>
       </div>
 
-      {/* 2. Main content area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 lg:grid-cols-3 gap-10 text-left">
-        {/* Left Columns: Synopsis, Cast, Reviews */}
+      {/* 3. Detailed Synopsis and Cast Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 grid grid-cols-1 lg:grid-cols-3 gap-12 text-left">
+        {/* Left column: About & Cast */}
         <div className="lg:col-span-2 space-y-12">
-          {/* About */}
-          <div className="space-y-3">
-            <h3 className="text-xl font-bold text-zinc-900 font-display uppercase tracking-wide">About the Movie</h3>
-            <p className="text-sm text-zinc-600 leading-relaxed">{movie.description}</p>
+          {/* About the movie */}
+          <div className="space-y-4">
+            <h3 className="text-xl font-bold text-white font-display border-l-4 border-brand-red pl-3 tracking-wide uppercase">
+              Synopsis
+            </h3>
+            <p className="text-zinc-300 text-sm leading-relaxed font-normal">
+              {movie.description || 'No description available for this movie.'}
+            </p>
           </div>
 
-          {/* Cast */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-zinc-900 font-display uppercase tracking-wide">Cast Members</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              {castList.map((actor, idx) => (
-                <div key={idx} className="bg-white p-3 border border-zinc-200 rounded-xl flex items-center gap-3 shadow-sm">
-                  <img src={actor.avatar} alt={actor.name} className="w-10 h-10 rounded-full object-cover border border-zinc-150" />
-                  <div className="text-left">
-                    <p className="text-xs font-bold text-zinc-800 line-clamp-1">{actor.name}</p>
-                    <p className="text-[10px] text-zinc-400 truncate">{actor.role}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* User Reviews */}
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-zinc-900 font-display uppercase tracking-wide">User Reviews</h3>
-            <div className="space-y-4">
-              {reviews.map((rev) => (
-                <div key={rev.id} className="bg-white border border-zinc-200 rounded-xl p-5 shadow-sm space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center font-bold text-xs text-zinc-600 uppercase">
-                        {rev.userName[0]}
-                      </div>
-                      <span className="text-xs font-bold text-zinc-800">{rev.userName}</span>
-                    </div>
-                    <div className="flex items-center gap-1 text-xs font-bold text-yellow-500">
-                      <Star className="w-3.5 h-3.5 fill-current" />
-                      <span>{rev.rating}/10</span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-zinc-600 leading-relaxed font-normal">{rev.comment}</p>
-                </div>
-              ))}
-            </div>
+          {/* Cast grid */}
+          <div className="space-y-6">
+            <h3 className="text-xl font-bold text-white font-display border-l-4 border-brand-red pl-3 tracking-wide uppercase">
+              Principal Cast
+            </h3>
+            
+            {movie?.cast && movie.cast.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                {movie.cast.map((actor, idx) => (
+                  <CastMember key={idx} actor={actor} />
+                ))}
+              </div>
+            ) : (
+              <div className="bg-zinc-900/50 border border-zinc-900 p-6 rounded-xl text-center">
+                <p className="text-sm text-zinc-400 italic">Cast information unavailable</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Right Column: Showtimes booking widget */}
-        <div id="showtimes-selector" className="lg:col-span-1 space-y-6 scroll-mt-24">
-          <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm space-y-6">
-            <div>
-              <h3 className="font-bold text-base text-zinc-950 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-brand-red" />
-                Select Show Time
-              </h3>
-              <p className="text-xs text-zinc-400 mt-1">Book tickets for today's dynamic screenings</p>
-            </div>
-
-            {/* Showtime Timing Chips */}
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-100 pb-1.5">Available Slots</h4>
-              <div className="flex flex-wrap gap-2.5">
-                {showtimes.map((slot, idx) => (
-                  <Link
-                    key={idx}
-                    to="/seats"
-                    onClick={() => handleShowtimeClick(slot)}
-                    className="flex-1 min-w-[90px] text-center border border-zinc-200 hover:border-brand-red bg-zinc-50 hover:bg-brand-red hover:text-white px-3 py-2 rounded-lg text-xs font-bold text-zinc-700 transition-all cursor-pointer"
-                  >
-                    {slot}
-                  </Link>
-                ))}
+        {/* Right column: Technical Info */}
+        <div className="lg:col-span-1 space-y-6">
+          <div className="bg-zinc-900 border border-zinc-800/50 rounded-xl p-6 shadow-lg space-y-4">
+            <h4 className="font-bold text-base text-white tracking-tight border-b border-zinc-800 pb-3 uppercase font-display">
+              Movie Details
+            </h4>
+            
+            <div className="space-y-3 text-xs">
+              <div className="flex justify-between py-1 border-b border-zinc-800/30">
+                <span className="text-zinc-500">Language</span>
+                <span className="text-zinc-200 font-semibold">{movie.language || 'English'}</span>
               </div>
-            </div>
-
-            {/* Trust notes */}
-            <div className="pt-2 border-t border-zinc-150 space-y-2.5 text-xs text-zinc-500">
-              <div className="flex gap-2 items-start">
-                <ShieldCheck className="w-4 h-4 text-green-600 shrink-0 mt-0.5" />
-                <span>Instant confirmation tickets generated dynamically in user dashboard.</span>
+              <div className="flex justify-between py-1 border-b border-zinc-800/30">
+                <span className="text-zinc-500">Format</span>
+                <span className="text-zinc-200 font-semibold">IMAX 2D, 2D</span>
               </div>
+              <div className="flex justify-between py-1 border-b border-zinc-800/30">
+                <span className="text-zinc-500">Certificate</span>
+                <span className="text-zinc-200 font-semibold">UA</span>
+              </div>
+              {movie.duration && (
+                <div className="flex justify-between py-1 border-b border-zinc-800/30">
+                  <span className="text-zinc-500">Duration</span>
+                  <span className="text-zinc-200 font-semibold">{movie.duration}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Trailer Modal Player */}
-      {activeTrailerUrl && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 p-4 animate-in fade-in duration-200">
+      {/* Trailer Modal Player Overlay */}
+      {isTrailerOpen && movie.trailerUrl && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 animate-in fade-in duration-250">
           <div className="relative w-full max-w-4xl aspect-video bg-black rounded-xl overflow-hidden shadow-2xl border border-zinc-800 animate-in zoom-in-95 duration-200">
-            <button onClick={() => setActiveTrailerUrl(null)} className="absolute top-4 right-4 z-50 p-2 bg-zinc-900/80 hover:bg-brand-red rounded-full text-white transition-colors cursor-pointer">
+            {/* Close modal handle */}
+            <button
+              onClick={() => setIsTrailerOpen(false)}
+              className="absolute top-4 right-4 z-50 p-2.5 bg-zinc-900/80 hover:bg-brand-red rounded-full text-white transition-colors cursor-pointer"
+              aria-label="Close Trailer"
+            >
               <X className="w-5 h-5" />
             </button>
-            <iframe src={`${activeTrailerUrl}?autoplay=1`} title="Trailer Stream" className="w-full h-full border-none" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen></iframe>
+            {/* Frame Embed (NO autoplay for user control) */}
+            <iframe
+              src={movie.trailerUrl}
+              title="Trailer Playback"
+              className="w-full h-full border-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
           </div>
         </div>
       )}
