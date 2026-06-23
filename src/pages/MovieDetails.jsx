@@ -5,6 +5,7 @@ import Button from '../components/ui/Button';
 import { Star, Clock, Calendar, Film, Play, X, AlertTriangle, ArrowLeft, User } from 'lucide-react';
 import { useBooking } from '../hooks/useBooking';
 import { THEATRES } from '../data/theatres';
+import { SHOWTIMES } from '../data/showtimes';
 
 const CastMember = ({ actor }) => {
   const [imgError, setImgError] = useState(false);
@@ -41,7 +42,14 @@ const CastMember = ({ actor }) => {
 const MovieDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { selectedTheatre, selectTheatre } = useBooking();
+  const { 
+    selectedTheatre, 
+    selectTheatre,
+    selectedDate,
+    selectedShowtime,
+    selectDate,
+    selectShowtime
+  } = useBooking();
   const [movie, setMovie] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -150,6 +158,42 @@ const MovieDetails = () => {
       </div>
     );
   }
+
+  const generateNext7Days = () => {
+    const dates = [];
+    const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    
+    for (let i = 0; i < 7; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() + i);
+      
+      let label = '';
+      if (i === 0) {
+        label = 'Today';
+      } else if (i === 1) {
+        label = 'Tomorrow';
+      } else {
+        label = daysOfWeek[d.getDay()];
+      }
+      
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      const isoDate = `${year}-${month}-${day}`;
+      
+      const dateString = `${months[d.getMonth()]} ${d.getDate()}`;
+      
+      dates.push({
+        label,
+        value: isoDate,
+        dateString
+      });
+    }
+    return dates;
+  };
+
+  const next7Days = generateNext7Days();
 
   return (
     <div className="bg-zinc-950 min-h-screen text-zinc-100 font-sans pb-16">
@@ -377,6 +421,69 @@ const MovieDetails = () => {
                       {theatre.type}
                     </span>
                   </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 5. Available Dates Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-zinc-900 text-left">
+        <h3 className="text-xl font-bold text-white font-display border-l-4 border-brand-red pl-3 tracking-wide uppercase mb-8">
+          Available Dates
+        </h3>
+        
+        <div className="flex flex-wrap gap-4">
+          {next7Days.map((dateObj) => {
+            const isSelected = selectedDate?.value === dateObj.value;
+            return (
+              <div
+                key={dateObj.value}
+                onClick={() => selectDate(isSelected ? null : dateObj)}
+                className={`group flex flex-col items-center justify-center p-4 rounded-xl cursor-pointer transition-all duration-300 min-w-[90px] border ${
+                  isSelected 
+                    ? 'bg-brand-red border-brand-red text-white shadow-lg shadow-brand-red/20 scale-105' 
+                    : 'bg-zinc-900/40 border-zinc-850 text-zinc-400 hover:border-zinc-700 hover:text-white'
+                }`}
+              >
+                <span className="text-[10px] font-bold uppercase tracking-wider mb-1">
+                  {dateObj.label}
+                </span>
+                <span className={`text-base font-extrabold font-display ${isSelected ? 'text-white' : 'text-zinc-200 group-hover:text-white'}`}>
+                  {dateObj.dateString}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 6. Available Showtimes Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-zinc-900 text-left">
+        <h3 className="text-xl font-bold text-white font-display border-l-4 border-brand-red pl-3 tracking-wide uppercase mb-8">
+          Available Showtimes
+        </h3>
+        
+        {!SHOWTIMES || SHOWTIMES.length === 0 ? (
+          <div className="bg-zinc-900/50 border border-zinc-900 p-8 rounded-xl text-center">
+            <p className="text-sm text-zinc-400 italic">No showtimes available</p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-4">
+            {SHOWTIMES.map((showtimeObj) => {
+              const isSelected = selectedShowtime?.id === showtimeObj.id;
+              return (
+                <div
+                  key={showtimeObj.id}
+                  onClick={() => selectShowtime(isSelected ? null : showtimeObj)}
+                  className={`group px-6 py-3.5 rounded-xl cursor-pointer transition-all duration-300 border flex items-center justify-center font-bold text-sm ${
+                    isSelected 
+                      ? 'bg-brand-red border-brand-red text-white shadow-lg shadow-brand-red/20 scale-105' 
+                      : 'bg-zinc-900/40 border-zinc-850 text-zinc-300 hover:border-zinc-700 hover:text-white'
+                  }`}
+                >
+                  {showtimeObj.time}
                 </div>
               );
             })}

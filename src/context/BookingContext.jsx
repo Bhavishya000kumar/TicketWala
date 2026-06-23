@@ -41,6 +41,28 @@ export const BookingProvider = ({ children }) => {
 
   const selectedTheatreId = selectedTheatre ? selectedTheatre.id : null;
 
+  // Day 4C: Store selected date and persist in localStorage
+  const [selectedDate, setSelectedDate] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cineverse_selected_date');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.error('[BookingContext] Error reading selected date from localStorage:', e);
+      return null;
+    }
+  });
+
+  // Day 4C: Store selected showtime and persist in localStorage
+  const [selectedShowtime, setSelectedShowtime] = useState(() => {
+    try {
+      const stored = localStorage.getItem('cineverse_selected_showtime');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      console.error('[BookingContext] Error reading selected showtime from localStorage:', e);
+      return null;
+    }
+  });
+
   useEffect(() => {
     // Load historical bookings
     const storedHistory = localStorage.getItem('cineverse_booking_history');
@@ -54,7 +76,17 @@ export const BookingProvider = ({ children }) => {
   };
 
   const selectDate = (date) => {
-    setBooking(prev => ({ ...prev, date }));
+    setSelectedDate(date);
+    setBooking(prev => ({ ...prev, date: date?.value || date }));
+    try {
+      if (date) {
+        localStorage.setItem('cineverse_selected_date', JSON.stringify(date));
+      } else {
+        localStorage.removeItem('cineverse_selected_date');
+      }
+    } catch (e) {
+      console.error('[BookingContext] Error writing selected date to localStorage:', e);
+    }
   };
 
   const selectCinema = (cinema) => {
@@ -62,7 +94,17 @@ export const BookingProvider = ({ children }) => {
   };
 
   const selectShowtime = (showtime) => {
-    setBooking(prev => ({ ...prev, showtime }));
+    setSelectedShowtime(showtime);
+    setBooking(prev => ({ ...prev, showtime: showtime?.time || showtime }));
+    try {
+      if (showtime) {
+        localStorage.setItem('cineverse_selected_showtime', JSON.stringify(showtime));
+      } else {
+        localStorage.removeItem('cineverse_selected_showtime');
+      }
+    } catch (e) {
+      console.error('[BookingContext] Error writing selected showtime to localStorage:', e);
+    }
   };
 
   const toggleSeat = (seatId, price = 250) => {
@@ -135,7 +177,11 @@ export const BookingProvider = ({ children }) => {
         confirmBooking,
         selectedTheatre,
         selectedTheatreId,
-        selectTheatre
+        selectTheatre,
+        selectedDate,
+        selectedShowtime,
+        selectDate,
+        selectShowtime
       }}
     >
       {children}
