@@ -38,14 +38,7 @@ const AppRoutes = () => {
         <Route path="register" element={<Register />} />
         
         {/* Secure User pages (Requires login session) */}
-        <Route 
-          path="checkout" 
-          element={
-            <ProtectedRoute>
-              <Checkout />
-            </ProtectedRoute>
-          } 
-        />
+        <Route path="checkout" element={<Checkout />} />
         <Route 
           path="profile" 
           element={

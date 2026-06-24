@@ -1,332 +1,316 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useBooking } from '../hooks/useBooking';
-import { useAuth } from '../hooks/useAuth';
-import { offerService } from '../services/offer.service';
-import { paymentService } from '../services/payment.service';
 import Button from '../components/ui/Button';
-import { Ticket, CreditCard, Tag, Check, AlertCircle, Sparkles, ChevronLeft, Calendar, MapPin, Clock } from 'lucide-react';
+import { Ticket, Film, Calendar, MapPin, Clock, CreditCard, ChevronLeft, AlertCircle } from 'lucide-react';
 
 const Checkout = () => {
-  const { booking, confirmBooking, clearBooking } = useBooking();
-  const { user } = useAuth();
+  const { booking, selectedTheatre, selectedDate, selectedShowtime, selectedSeats } = useBooking();
   const navigate = useNavigate();
 
-  const [couponCode, setCouponCode] = useState('');
-  const [couponError, setCouponError] = useState('');
-  const [couponSuccess, setCouponSuccess] = useState('');
-  const [discount, setDiscount] = useState(0);
-  const [isPaying, setIsPaying] = useState(false);
-  const [ticketDetails, setTicketDetails] = useState(null);
+  const [fullName, setFullName] = React.useState('');
+  const [email, setEmail] = React.useState('');
+  const [phone, setPhone] = React.useState('');
 
-  // Computations
-  const subtotal = booking.totalAmount;
-  const gst = Math.round(subtotal * 0.18);
-  const totalAmount = subtotal + gst;
-  const finalPayable = Math.max(50, totalAmount - discount);
+  // Resolve movie details
+  const movie = booking?.movie;
+  
+  // Resolve theatre details
+  const theatre = selectedTheatre || booking?.cinema;
+  const theatreName = theatre?.name || 'Not Selected';
+  const theatreLocation = theatre?.location || '';
 
-  const handleApplyCoupon = async (e) => {
-    e.preventDefault();
-    if (!couponCode) return;
-    setCouponError('');
-    setCouponSuccess('');
+  // Resolve date details
+  const dateObj = selectedDate || booking?.date;
+  const dateLabel = dateObj 
+    ? (typeof dateObj === 'string' ? dateObj : `${dateObj.label}, ${dateObj.dateString}`) 
+    : 'Not Selected';
 
-    try {
-      const res = await offerService.validateCoupon(couponCode, subtotal);
-      setDiscount(res.discount);
-      setCouponSuccess(res.message);
-    } catch (err) {
-      setCouponError(err.message);
-      setDiscount(0);
+  // Resolve showtime details
+  const showtimeObj = selectedShowtime || booking?.showtime;
+  const showtimeLabel = showtimeObj
+    ? (typeof showtimeObj === 'string' ? showtimeObj : showtimeObj.time)
+    : 'Not Selected';
+
+  // Normalize selected seats (handle both objects and raw IDs arrays)
+  const normalizedSeats = React.useMemo(() => {
+    if (selectedSeats && selectedSeats.length > 0) {
+      return selectedSeats;
     }
-  };
-
-  const handlePaymentSubmit = async () => {
-    setIsPaying(true);
-    
-    const userDetails = {
-      name: user?.name || 'CineVerse Guest',
-      email: user?.email || 'guest@cineverse.com',
-      phone: '9999999999'
-    };
-
-    const bookingDetails = {
-      movie: booking.movie,
-      date: booking.date,
-      cinema: booking.cinema,
-      showtime: booking.showtime,
-      selectedSeats: booking.selectedSeats,
-      totalAmount: finalPayable
-    };
-
-    const onSuccess = async (verifyResult) => {
-      setIsPaying(false);
-      
-      // Store checkout receipt
-      setTicketDetails({
-        ...bookingDetails,
-        id: verifyResult.id || 'CV_' + Math.random().toString(36).substring(2, 8).toUpperCase(),
-        paymentId: verifyResult.paymentId,
-        paymentMethod: verifyResult.paymentMethod || 'Razorpay',
-        bookingTime: new Date().toISOString()
+    if (booking?.selectedSeats && booking.selectedSeats.length > 0) {
+      return booking.selectedSeats.map(id => {
+        const row = id.charAt(0);
+        let type = 'regular';
+        if (row === 'A' || row === 'B') type = 'recliner';
+        else if (row === 'C' || row === 'D') type = 'premium';
+        return { id, row, type };
       });
-    };
+    }
+    return [];
+  }, [selectedSeats, booking?.selectedSeats]);
 
-    const onFailure = (error) => {
-      setIsPaying(false);
-      alert(`Payment checkout failed: ${error.message}`);
-    };
+  const hasBookingData = movie && theatre && dateObj && showtimeObj && normalizedSeats.length > 0;
 
-    // Invoke Razorpay Integration flow
-    await paymentService.processCheckout(
-      bookingDetails,
-      userDetails,
-      onSuccess,
-      onFailure
-    );
+  // Pricing calculations
+  const getSeatPrice = (type) => {
+    if (type === 'recliner') return 350;
+    if (type === 'premium') return 250;
+    return 180;
   };
 
-  if (!booking.movie || !booking.cinema || booking.selectedSeats.length === 0) {
+  const selectedSeatsSummary = React.useMemo(() => {
+    return normalizedSeats.reduce((acc, seat) => {
+      const seatType = seat.type || 'regular';
+      acc[seatType] = (acc[seatType] || 0) + 1;
+      return acc;
+    }, { regular: 0, premium: 0, recliner: 0 });
+  }, [normalizedSeats]);
+
+  const regularCount = selectedSeatsSummary.regular || 0;
+  const premiumCount = selectedSeatsSummary.premium || 0;
+  const reclinerCount = selectedSeatsSummary.recliner || 0;
+
+  const regularTotal = regularCount * 180;
+  const premiumTotal = premiumCount * 250;
+  const reclinerTotal = reclinerCount * 350;
+
+  const subtotal = regularTotal + premiumTotal + reclinerTotal;
+  const convenienceFee = normalizedSeats.length * 30;
+  const gst = Math.round((subtotal + convenienceFee) * 0.18);
+  const grandTotal = subtotal + convenienceFee + gst;
+
+  if (!hasBookingData) {
     return (
-      <div className="max-w-4xl mx-auto px-4 py-20 text-center space-y-6">
-        <AlertCircle className="w-12 h-12 text-zinc-400 mx-auto" />
-        <h1 className="text-2xl font-bold text-zinc-950 font-display">No Checkout Session</h1>
-        <p className="text-sm text-zinc-500 max-w-sm mx-auto">Please select a movie and seating coordinates before checkout.</p>
-        <Link to="/">
-          <Button variant="primary">Return to Homepage</Button>
-        </Link>
+      <div className="bg-zinc-950 min-h-screen text-zinc-100 flex flex-col items-center justify-center px-4 font-sans py-20 text-center">
+        <div className="bg-zinc-900/40 border border-zinc-850 p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-6 backdrop-blur-sm">
+          <div className="mx-auto w-16 h-16 bg-brand-red/10 border border-brand-red/20 text-brand-red rounded-full flex items-center justify-center">
+            <AlertCircle className="w-8 h-8" />
+          </div>
+          
+          <div className="space-y-2">
+            <h2 className="text-2xl font-extrabold tracking-tight font-display text-white">No booking information available</h2>
+            <p className="text-sm text-zinc-400 leading-relaxed">
+              Please select your movie, showtime, and seats before visiting the checkout screen.
+            </p>
+          </div>
+
+          <div className="pt-2">
+            <Button
+              variant="primary"
+              onClick={() => navigate('/movies')}
+              className="w-full flex items-center justify-center gap-2 py-3.5 font-bold cursor-pointer"
+            >
+              Back to Movies
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-zinc-50 py-12 font-sans text-left">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+    <div className="bg-zinc-950 min-h-screen text-zinc-100 font-sans pb-16 pt-12 text-left">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         
-        {/* Navigation back */}
-        <Link to="/seats" className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-800 transition-colors font-bold uppercase tracking-wider">
-          <ChevronLeft className="w-4 h-4" />
-          Back to Seat Selection
-        </Link>
-
-        {/* Success confirmation overlay (when ticketDetails exist) */}
-        {ticketDetails ? (
-          <div className="bg-white rounded-xl shadow-xl border border-zinc-200 overflow-hidden max-w-xl mx-auto animate-in zoom-in-95 duration-200">
-            {/* Header */}
-            <div className="bg-zinc-950 text-white p-6 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Check className="w-6 h-6 text-green-500" />
-                <span className="font-display font-bold text-lg">Booking Confirmed!</span>
-              </div>
-              <span className="text-xs bg-zinc-800 text-zinc-300 font-mono px-2.5 py-1 rounded">
-                Ticket ID: {ticketDetails.id}
-              </span>
-            </div>
-
-            {/* Ticket body */}
-            <div className="p-6 space-y-6">
-              <div className="flex gap-4 pb-4 border-b border-zinc-150">
-                <img src={ticketDetails.movie.poster} alt={ticketDetails.movie.title} className="w-16 h-24 rounded-lg object-cover shadow-sm border border-zinc-200" />
-                <div>
-                  <h3 className="font-bold text-lg text-zinc-950 leading-snug">{ticketDetails.movie.title}</h3>
-                  <p className="text-xs text-zinc-500 mt-1">{ticketDetails.movie.genre}</p>
-                  <p className="text-xs font-semibold text-zinc-700 mt-1.5">{ticketDetails.movie.duration}</p>
-                </div>
-              </div>
-
-              {/* Grid */}
-              <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm">
-                <div>
-                  <span className="text-xs text-zinc-400 block uppercase font-semibold">Cinema Venue</span>
-                  <span className="font-bold text-zinc-800">{ticketDetails.cinema.name}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-zinc-400 block uppercase font-semibold">Date & Showtime</span>
-                  <span className="font-bold text-zinc-800">
-                    {ticketDetails.date.fullDateString || ticketDetails.date.dateNum + ' ' + ticketDetails.date.monthLabel}
-                    <br />
-                    <span className="text-brand-red">{ticketDetails.showtime}</span>
-                  </span>
-                </div>
-                <div>
-                  <span className="text-xs text-zinc-400 block uppercase font-semibold">Seat coordinates</span>
-                  <span className="font-bold text-zinc-850 font-mono">{ticketDetails.selectedSeats.join(', ')}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-zinc-400 block uppercase font-semibold">Payment Status</span>
-                  <span className="font-bold text-green-700 flex items-center gap-1">
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>Paid via {ticketDetails.paymentMethod}</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* API notes */}
-              <div className="bg-zinc-50 border border-zinc-200 rounded-lg p-4 text-[11px] text-zinc-500 space-y-1">
-                <p className="font-bold text-zinc-700">Production Integrations completed:</p>
-                <p>• Razorpay Transaction: <span className="font-mono">{ticketDetails.paymentId}</span></p>
-                <p>• Database Sync: Document generated and pushed to customer profile history.</p>
-              </div>
-            </div>
-
-            {/* Footer actions */}
-            <div className="bg-zinc-50 px-6 py-4.5 border-t border-zinc-150 flex gap-4">
-              <Button variant="outline" className="flex-1 cursor-pointer" onClick={() => {
-                clearBooking();
-                navigate('/');
-              }}>
-                Book More
-              </Button>
-              <Button variant="secondary" className="flex-1 cursor-pointer" onClick={() => {
-                clearBooking();
-                navigate('/bookings');
-              }}>
-                View Tickets History
-              </Button>
-            </div>
+        {/* Page title */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-3xl font-extrabold text-white font-display border-l-4 border-brand-red pl-4 tracking-wide uppercase">
+              Checkout Review
+            </h2>
+            <p className="text-xs text-zinc-500 mt-1 pl-4">Confirm your selected show details and information before booking.</p>
           </div>
-        ) : (
-          /* Normal Checkout Review Layout */
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <Link 
+            to={`/movie/${movie.id}`} 
+            className="flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors font-bold uppercase tracking-wider self-start sm:self-center"
+          >
+            <ChevronLeft className="w-4 h-4" />
+            Back to Movie Details
+          </Link>
+        </div>
+
+        {/* Checkout columns grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          
+          {/* Left Column: Ticket Details & Customer Details Form */}
+          <div className="lg:col-span-2 space-y-8">
             
-            {/* Left: Ticket Details Summary */}
-            <div className="lg:col-span-2 space-y-6">
-              <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm space-y-6">
-                <h2 className="text-lg font-bold text-zinc-950 flex items-center gap-2 border-b border-zinc-100 pb-4">
-                  <Ticket className="w-5.5 h-5.5 text-brand-red" />
-                  Review Ticket Reservation
-                </h2>
+            {/* 1. Ticket Review Block */}
+            <div className="bg-zinc-900/40 border border-zinc-850 rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-sm space-y-6">
+              <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-zinc-800/40 pb-4">
+                <Ticket className="w-5.5 h-5.5 text-brand-red" />
+                Ticket Details
+              </h3>
 
-                <div className="flex flex-col sm:flex-row gap-5">
-                  <img src={booking.movie.poster} alt={booking.movie.title} className="w-28 aspect-[2/3] object-cover rounded-lg shadow-sm border border-zinc-200 shrink-0 mx-auto sm:mx-0" />
-                  <div className="space-y-4 flex-grow text-left">
-                    <div>
-                      <h3 className="font-bold text-xl text-zinc-950">{booking.movie.title}</h3>
-                      <p className="text-xs text-zinc-400 mt-0.5">{booking.movie.genre} • UA</p>
+              <div className="flex flex-col sm:flex-row gap-6">
+                <img 
+                  src={movie.poster} 
+                  alt={movie.title} 
+                  className="w-28 aspect-[2/3] object-cover rounded-xl shadow-md border border-zinc-800 shrink-0 mx-auto sm:mx-0" 
+                />
+                
+                <div className="space-y-4 flex-grow">
+                  <div>
+                    <h4 className="font-extrabold text-xl text-white tracking-wide">{movie.title}</h4>
+                    <p className="text-xs text-zinc-400 mt-0.5">{movie.genre}</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs bg-zinc-950/40 p-4 rounded-xl border border-zinc-850">
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-zinc-500 block uppercase font-bold tracking-wider">Date</span>
+                      <span className="flex items-center gap-1.5 font-semibold text-white">
+                        <Calendar className="w-3.5 h-3.5 text-brand-red shrink-0" />
+                        <span>{dateLabel}</span>
+                      </span>
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-semibold text-zinc-700 bg-zinc-50 p-4.5 rounded-lg border border-zinc-200/65">
-                      <div className="space-y-1">
-                        <span className="text-[10px] text-zinc-400 block uppercase tracking-wider">Date</span>
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="w-4 h-4 text-brand-red shrink-0" />
-                          <span>{booking.date.fullDateString || booking.date.dateNum + ' ' + booking.date.monthLabel}</span>
-                        </span>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[10px] text-zinc-400 block uppercase tracking-wider">Cinema</span>
-                        <span className="flex items-center gap-1.5">
-                          <MapPin className="w-4 h-4 text-brand-red shrink-0" />
-                          <span className="truncate">{booking.cinema.name.split(',')[0]}</span>
-                        </span>
-                      </div>
-                      <div className="space-y-1">
-                        <span className="text-[10px] text-zinc-400 block uppercase tracking-wider">Show Time</span>
-                        <span className="flex items-center gap-1.5">
-                          <Clock className="w-4 h-4 text-brand-red shrink-0" />
-                          <span>{booking.showtime}</span>
-                        </span>
-                      </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-zinc-500 block uppercase font-bold tracking-wider">Cinema</span>
+                      <span className="flex items-center gap-1.5 font-semibold text-white">
+                        <MapPin className="w-3.5 h-3.5 text-brand-red shrink-0" />
+                        <span className="truncate">{theatreName}</span>
+                      </span>
                     </div>
+                    <div className="space-y-1">
+                      <span className="text-[9px] text-zinc-500 block uppercase font-bold tracking-wider">Showtime</span>
+                      <span className="flex items-center gap-1.5 font-semibold text-white">
+                        <Clock className="w-3.5 h-3.5 text-brand-red shrink-0" />
+                        <span>{showtimeLabel}</span>
+                      </span>
+                    </div>
+                  </div>
 
+                  <div className="flex justify-between items-center pt-2">
                     <div>
-                      <span className="text-xs text-zinc-400 uppercase font-bold tracking-wider">Selected seats</span>
-                      <p className="text-sm font-bold text-zinc-900 font-mono mt-1">
-                        {booking.selectedSeats.join(', ')} ({booking.selectedSeats.length} ticket(s))
+                      <span className="text-[10px] text-zinc-500 block uppercase font-bold tracking-wider mb-1">Seats Selected</span>
+                      <p className="text-base font-bold text-white font-mono tracking-wider">
+                        {normalizedSeats.map(s => s.id).join(', ')}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-zinc-500 block uppercase font-bold tracking-wider mb-1">Total Seats</span>
+                      <p className="text-lg font-black text-brand-red">
+                        {normalizedSeats.length}
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
-
-              {/* Coupon Panel */}
-              <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm space-y-4">
-                <h3 className="font-bold text-sm text-zinc-950 uppercase tracking-wider flex items-center gap-2">
-                  <Tag className="w-4 h-4 text-brand-red" />
-                  Promo Codes & Bank Vouchers
-                </h3>
-                
-                <form onSubmit={handleApplyCoupon} className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Enter coupon code (e.g. CINECC20)"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="bg-zinc-50 border border-zinc-250 rounded-lg px-4 py-2.5 text-sm text-zinc-800 focus:outline-none focus:bg-white focus:border-brand-red w-full uppercase"
-                  />
-                  <Button type="submit" variant="secondary" className="shrink-0 font-bold px-6">
-                    APPLY
-                  </Button>
-                </form>
-
-                {couponError && <p className="text-xs text-red-600 font-bold">{couponError}</p>}
-                {couponSuccess && <p className="text-xs text-green-600 font-bold flex items-center gap-1">
-                  <Sparkles className="w-4 h-4 fill-current text-green-500" />
-                  {couponSuccess}
-                </p>}
-
-                {/* Offer list info */}
-                <div className="pt-2">
-                  <p className="text-[11px] text-zinc-400 font-bold uppercase tracking-wider">Try Vouchers:</p>
-                  <div className="flex gap-4.5 mt-2.5 text-xs text-zinc-600">
-                    <div>
-                      <code className="bg-zinc-100 border border-zinc-200 px-1.5 py-0.5 rounded font-mono font-bold">CINECC20</code>
-                      <span className="text-[11px] text-zinc-400 block mt-0.5">20% Bank discount</span>
-                    </div>
-                    <div>
-                      <code className="bg-zinc-100 border border-zinc-200 px-1.5 py-0.5 rounded font-mono font-bold">CINESTUDENT</code>
-                      <span className="text-[11px] text-zinc-400 block mt-0.5">Rs 150 Student off</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Right: Bill details */}
-            <div className="lg:col-span-1 space-y-6">
-              <div className="bg-white border border-zinc-200 rounded-xl p-6 shadow-sm space-y-6">
-                <h3 className="font-bold text-zinc-950 text-base uppercase tracking-wider border-b border-zinc-100 pb-3">Bill Details</h3>
-                
-                <div className="space-y-3.5 text-xs text-zinc-650 font-semibold">
-                  <div className="flex justify-between">
-                    <span>Ticket Cost ({booking.selectedSeats.length} seats)</span>
-                    <span className="font-mono text-zinc-800">Rs. {subtotal}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Integrated CGST/SGST (18%)</span>
-                    <span className="font-mono text-zinc-800">Rs. {gst}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-green-600 font-bold">
-                      <span>Voucher Discount Applied</span>
-                      <span className="font-mono">- Rs. {discount}</span>
-                    </div>
-                  )}
-                  <div className="border-t border-zinc-150 pt-4 flex justify-between text-sm font-extrabold text-zinc-900">
-                    <span>Total Amount Payable</span>
-                    <span className="font-mono text-brand-red text-base">Rs. {finalPayable}</span>
-                  </div>
+            {/* 2. Customer Details Form */}
+            <div className="bg-zinc-900/40 border border-zinc-850 rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-sm space-y-6">
+              <h3 className="text-lg font-bold text-white uppercase tracking-wider flex items-center gap-2 border-b border-zinc-800/40 pb-4">
+                Customer Details
+              </h3>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">Full Name</label>
+                  <input
+                    type="text"
+                    placeholder="Enter your full name"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-red focus:bg-zinc-950/80 transition-colors focus:outline-none"
+                  />
                 </div>
-
-                <Button
-                  variant="primary"
-                  size="lg"
-                  className="w-full font-bold tracking-wider py-4 shadow-md shadow-brand-red/10 cursor-pointer flex items-center justify-center gap-1.5"
-                  loading={isPaying}
-                  onClick={handlePaymentSubmit}
-                >
-                  <CreditCard className="w-5 h-5" />
-                  PAY NOW WITH RAZORPAY
-                </Button>
-
-                <p className="text-[10px] text-zinc-400 text-center leading-normal">
-                  By clicking Pay Now, you agree to CineVerse Terms of Service. Booking fees is non-refundable.
-                </p>
+                <div className="space-y-2">
+                  <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="Enter your email address"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-red focus:bg-zinc-950/80 transition-colors focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-2 sm:col-span-2">
+                  <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">Mobile Number</label>
+                  <input
+                    type="tel"
+                    placeholder="Enter your mobile number"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-red focus:bg-zinc-950/80 transition-colors focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
 
           </div>
-        )}
+
+          {/* Right Column: Price Summary & Booking Notes */}
+          <div className="lg:col-span-1 space-y-8">
+            
+            {/* 3. Price Summary Block */}
+            <div className="bg-zinc-900/40 border border-zinc-850 rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-sm space-y-6">
+              <h3 className="text-lg font-bold text-white uppercase tracking-wider border-b border-zinc-800/40 pb-4">
+                Price Summary
+              </h3>
+
+              <div className="space-y-4">
+                {/* Seat Breakdown */}
+                <div className="space-y-2.5">
+                  <span className="text-zinc-550 text-[10px] font-bold uppercase tracking-widest block mb-1">
+                    Seat Charges
+                  </span>
+                  <div className="space-y-1.5 text-xs text-zinc-300 font-semibold">
+                    <div className="flex justify-between">
+                      <span>Regular ({regularCount} × ₹180)</span>
+                      <span className="font-mono">₹{regularTotal}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Premium ({premiumCount} × ₹250)</span>
+                      <span className="font-mono">₹{premiumTotal}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Recliner ({reclinerCount} × ₹350)</span>
+                      <span className="font-mono">₹{reclinerTotal}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Subtotals & Fees */}
+                <div className="border-t border-zinc-800/60 pt-4 space-y-2.5 text-xs text-zinc-400 font-bold">
+                  <div className="flex justify-between">
+                    <span>Ticket Subtotal</span>
+                    <span className="font-mono text-white">₹{subtotal}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Convenience Fee (₹30 per seat)</span>
+                    <span className="font-mono text-white">₹{convenienceFee}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>GST (18%)</span>
+                    <span className="font-mono text-white">₹{gst}</span>
+                  </div>
+                </div>
+
+                {/* Grand Total */}
+                <div className="border-t border-zinc-855 pt-4 flex justify-between items-center text-sm font-extrabold">
+                  <span className="text-white uppercase tracking-wider">Grand Total</span>
+                  <span className="text-brand-red font-mono text-lg font-black">₹{grandTotal}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Booking Notes Section */}
+            <div className="bg-zinc-900/40 border border-zinc-850 rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-sm space-y-4">
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                Booking Policy & Notes
+              </h4>
+              
+              <ul className="space-y-2.5 text-xs text-zinc-400 list-disc pl-4 leading-relaxed font-semibold">
+                <li>Tickets once booked cannot be cancelled.</li>
+                <li>Arrive at least 15 minutes before showtime.</li>
+                <li>Carry valid ID if required.</li>
+              </ul>
+            </div>
+
+          </div>
+
+        </div>
+
       </div>
     </div>
   );

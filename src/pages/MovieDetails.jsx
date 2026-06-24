@@ -802,6 +802,20 @@ const MovieDetails = () => {
         </div>
       </div>
 
+      {/* Review Booking CTA Section */}
+      {selectedTheatre && selectedDate && selectedShowtime && selectedSeats && selectedSeats.length > 0 && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 text-left animate-in fade-in duration-300">
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={() => navigate('/checkout')}
+            className="w-full md:w-auto font-bold tracking-wider py-4 px-10 shadow-md shadow-brand-red/10 cursor-pointer hover:scale-[1.01] transition-transform"
+          >
+            Review Booking
+          </Button>
+        </div>
+      )}
+
       {/* Trailer Modal Player Overlay */}
       {isTrailerOpen && movie.trailerUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 animate-in fade-in duration-250">

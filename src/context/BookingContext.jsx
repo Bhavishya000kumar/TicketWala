@@ -80,10 +80,39 @@ export const BookingProvider = ({ children }) => {
     if (storedHistory) {
       setBookingHistory(JSON.parse(storedHistory));
     }
+    
+    // Load movie from localStorage if present
+    try {
+      const storedMovie = localStorage.getItem('cineverse_selected_movie');
+      if (storedMovie) {
+        setBooking(prev => ({ ...prev, movie: JSON.parse(storedMovie) }));
+      }
+    } catch (e) {
+      console.error('[BookingContext] Error reading selected movie from localStorage:', e);
+    }
+
+    // Load cinema from localStorage if present
+    try {
+      const storedCinema = localStorage.getItem('cineverse_selected_cinema') || localStorage.getItem('cineverse_selected_theatre');
+      if (storedCinema) {
+        setBooking(prev => ({ ...prev, cinema: JSON.parse(storedCinema) }));
+      }
+    } catch (e) {
+      console.error('[BookingContext] Error reading selected cinema from localStorage:', e);
+    }
   }, []);
 
   const selectMovie = (movie) => {
     setBooking(prev => ({ ...prev, movie }));
+    try {
+      if (movie) {
+        localStorage.setItem('cineverse_selected_movie', JSON.stringify(movie));
+      } else {
+        localStorage.removeItem('cineverse_selected_movie');
+      }
+    } catch (e) {
+      console.error('[BookingContext] Error writing selected movie to localStorage:', e);
+    }
   };
 
   const selectDate = (date) => {
@@ -102,6 +131,15 @@ export const BookingProvider = ({ children }) => {
 
   const selectCinema = (cinema) => {
     setBooking(prev => ({ ...prev, cinema }));
+    try {
+      if (cinema) {
+        localStorage.setItem('cineverse_selected_cinema', JSON.stringify(cinema));
+      } else {
+        localStorage.removeItem('cineverse_selected_cinema');
+      }
+    } catch (e) {
+      console.error('[BookingContext] Error writing selected cinema to localStorage:', e);
+    }
   };
 
   const selectShowtime = (showtime) => {
