@@ -207,6 +207,26 @@ const MovieDetails = () => {
     return acc;
   }, {}) : {};
 
+  // Group selected seats by type to compute itemized breakdown
+  const selectedSeatsSummary = selectedSeats ? selectedSeats.reduce((acc, seat) => {
+    const seatType = seat.type || 'regular';
+    acc[seatType] = (acc[seatType] || 0) + 1;
+    return acc;
+  }, { regular: 0, premium: 0, recliner: 0 }) : { regular: 0, premium: 0, recliner: 0 };
+
+  const regularCount = selectedSeatsSummary.regular || 0;
+  const premiumCount = selectedSeatsSummary.premium || 0;
+  const reclinerCount = selectedSeatsSummary.recliner || 0;
+
+  const regularTotal = regularCount * 180;
+  const premiumTotal = premiumCount * 250;
+  const reclinerTotal = reclinerCount * 350;
+
+  const subtotal = regularTotal + premiumTotal + reclinerTotal;
+  const convenienceFee = (selectedSeats ? selectedSeats.length : 0) * 30;
+  const gst = Math.round((subtotal + convenienceFee) * 0.18);
+  const grandTotal = subtotal + convenienceFee + gst;
+
   return (
     <div className="bg-zinc-950 min-h-screen text-zinc-100 font-sans pb-16">
       {/* 1. Backdrop Banner Section (Reduced Height) */}
@@ -723,6 +743,60 @@ const MovieDetails = () => {
                   </p>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 9. Price Breakdown Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-zinc-900 text-left animate-in fade-in duration-300">
+        <h3 className="text-xl font-bold text-white font-display border-l-4 border-brand-red pl-3 tracking-wide uppercase mb-8">
+          Price Breakdown
+        </h3>
+        
+        <div className="bg-zinc-900/40 border border-zinc-850 rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-sm">
+          <div className="max-w-md space-y-4">
+            {/* Seat Charges transparency list */}
+            <div className="space-y-2">
+              <span className="text-zinc-550 text-[10px] font-bold uppercase tracking-widest block mb-1">
+                Seat Charges
+              </span>
+              <div className="space-y-1.5 text-sm text-zinc-300 font-semibold">
+                <div className="flex justify-between">
+                  <span>Regular ({regularCount} × ₹180)</span>
+                  <span className="font-mono">₹{regularTotal}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Premium ({premiumCount} × ₹250)</span>
+                  <span className="font-mono">₹{premiumTotal}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Recliner ({reclinerCount} × ₹350)</span>
+                  <span className="font-mono">₹{reclinerTotal}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Calculations Breakdown */}
+            <div className="border-t border-zinc-800/60 pt-4 space-y-2.5 text-sm text-zinc-350 font-semibold">
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Ticket Subtotal</span>
+                <span className="font-mono text-white">₹{subtotal}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">Convenience Fee (₹30 per seat)</span>
+                <span className="font-mono text-white">₹{convenienceFee}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-zinc-400">GST (18%)</span>
+                <span className="font-mono text-white">₹{gst}</span>
+              </div>
+            </div>
+
+            {/* Grand Total */}
+            <div className="border-t border-zinc-850 pt-4 flex justify-between items-center text-base font-extrabold">
+              <span className="text-white uppercase tracking-wider">Grand Total</span>
+              <span className="text-brand-red font-mono text-xl font-black">₹{grandTotal}</span>
             </div>
           </div>
         </div>
