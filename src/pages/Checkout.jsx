@@ -12,6 +12,23 @@ const Checkout = () => {
   const [email, setEmail] = React.useState('');
   const [phone, setPhone] = React.useState('');
 
+  const [fullNameTouched, setFullNameTouched] = React.useState(false);
+  const [emailTouched, setEmailTouched] = React.useState(false);
+  const [phoneTouched, setPhoneTouched] = React.useState(false);
+
+  // Validation rules check
+  const isNameValid = fullName.trim().length >= 3;
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isPhoneValid = /^\d{10}$/.test(phone);
+  const isFormValid = isNameValid && isEmailValid && isPhoneValid;
+
+  const handlePhoneChange = (e) => {
+    const val = e.target.value.replace(/\D/g, ''); // numbers only
+    if (val.length <= 10) {
+      setPhone(val);
+    }
+  };
+
   // Resolve movie details
   const movie = booking?.movie;
   
@@ -211,8 +228,14 @@ const Checkout = () => {
                     placeholder="Enter your full name"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
+                    onBlur={() => setFullNameTouched(true)}
                     className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-red focus:bg-zinc-950/80 transition-colors focus:outline-none"
                   />
+                  {fullNameTouched && !isNameValid && (
+                    <p className="text-brand-red text-xs font-semibold mt-1">
+                      {fullName.trim().length === 0 ? "Full Name is required" : "Full Name must be at least 3 characters"}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">Email Address</label>
@@ -221,8 +244,14 @@ const Checkout = () => {
                     placeholder="Enter your email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    onBlur={() => setEmailTouched(true)}
                     className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-red focus:bg-zinc-950/80 transition-colors focus:outline-none"
                   />
+                  {emailTouched && !isEmailValid && (
+                    <p className="text-brand-red text-xs font-semibold mt-1">
+                      Please enter a valid email address
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2 sm:col-span-2">
                   <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest block">Mobile Number</label>
@@ -230,10 +259,34 @@ const Checkout = () => {
                     type="tel"
                     placeholder="Enter your mobile number"
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
+                    onChange={handlePhoneChange}
+                    onBlur={() => setPhoneTouched(true)}
+                    maxLength={10}
                     className="w-full bg-zinc-950/60 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white focus:border-brand-red focus:bg-zinc-950/80 transition-colors focus:outline-none"
                   />
+                  {phoneTouched && !isPhoneValid && (
+                    <p className="text-brand-red text-xs font-semibold mt-1">
+                      Please enter a valid 10-digit mobile number
+                    </p>
+                  )}
                 </div>
+              </div>
+
+              {/* Confirm Booking CTA Section */}
+              <div className="pt-4 border-t border-zinc-800/40 flex justify-end">
+                <Button
+                  variant="primary"
+                  size="lg"
+                  disabled={!isFormValid}
+                  onClick={() => {}}
+                  className={`w-full sm:w-auto font-bold tracking-wider py-3.5 px-8 transition-all ${
+                    isFormValid
+                      ? 'shadow-md shadow-brand-red/10 cursor-pointer hover:scale-[1.02] bg-brand-red border-transparent text-white'
+                      : 'bg-zinc-850 border-zinc-800 text-zinc-500 cursor-not-allowed opacity-40'
+                  }`}
+                >
+                  Confirm Booking
+                </Button>
               </div>
             </div>
 
