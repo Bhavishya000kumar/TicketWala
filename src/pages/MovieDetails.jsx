@@ -624,6 +624,110 @@ const MovieDetails = () => {
         )}
       </div>
 
+      {/* 8. Ticket Summary Section */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 border-t border-zinc-900 text-left">
+        <h3 className="text-xl font-bold text-white font-display border-l-4 border-brand-red pl-3 tracking-wide uppercase mb-8">
+          Ticket Summary
+        </h3>
+        
+        <div className="bg-zinc-900/40 border border-zinc-850 rounded-2xl p-6 sm:p-8 shadow-xl backdrop-blur-sm">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Movie block */}
+            <div className="space-y-2">
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block">
+                Movie
+              </span>
+              <h4 className="text-white font-extrabold text-base tracking-wide">
+                {movie.title}
+              </h4>
+              <p className="text-xs text-zinc-400">
+                {movie.genre}
+              </p>
+            </div>
+
+            {/* Theatre block */}
+            <div className="space-y-2">
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block">
+                Theatre
+              </span>
+              {selectedTheatre ? (
+                <>
+                  <h4 className="text-white font-extrabold text-base tracking-wide">
+                    {selectedTheatre.name}
+                  </h4>
+                  <p className="text-xs text-zinc-400">
+                    {selectedTheatre.location}
+                  </p>
+                </>
+              ) : (
+                <p className="text-zinc-500 italic text-sm font-semibold">
+                  Not Selected
+                </p>
+              )}
+            </div>
+
+            {/* Date & Showtime block */}
+            <div className="space-y-2">
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block">
+                Date & Showtime
+              </span>
+              <div className="space-y-1 text-sm">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-zinc-400 text-xs font-semibold">Date:</span>
+                  {selectedDate ? (
+                    <span className="text-white font-bold text-xs bg-zinc-800/85 px-2 py-0.5 rounded">
+                      {selectedDate.label}, {selectedDate.dateString}
+                    </span>
+                  ) : (
+                    <span className="text-zinc-500 italic text-xs font-semibold">
+                      Not Selected
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 mt-1.5">
+                  <span className="text-zinc-400 text-xs font-semibold">Showtime:</span>
+                  {selectedShowtime ? (
+                    <span className="text-brand-red font-extrabold text-xs bg-brand-red/10 border border-brand-red/20 px-2 py-0.5 rounded">
+                      {selectedShowtime.time}
+                    </span>
+                  ) : (
+                    <span className="text-zinc-500 italic text-xs font-semibold">
+                      Not Selected
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Selected Seats block */}
+            <div className="space-y-2">
+              <span className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest block">
+                Selected Seats
+              </span>
+              {selectedSeats && selectedSeats.length > 0 ? (
+                <div>
+                  <p className="text-white font-mono font-extrabold text-base tracking-wider">
+                    {selectedSeats.map(s => s.id).join(', ')}
+                  </p>
+                  <p className="text-zinc-450 font-bold text-xs mt-2 uppercase tracking-wide">
+                    Total Seats: <span className="text-brand-red font-black text-sm">{selectedSeats.length}</span>
+                  </p>
+                </div>
+              ) : (
+                <div>
+                  <p className="text-zinc-500 italic text-sm font-semibold">
+                    None
+                  </p>
+                  <p className="text-zinc-500 font-bold text-xs mt-2 uppercase tracking-wide">
+                    Total Seats: <span className="text-zinc-500 font-black text-sm">0</span>
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Trailer Modal Player Overlay */}
       {isTrailerOpen && movie.trailerUrl && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/95 p-4 animate-in fade-in duration-250">
